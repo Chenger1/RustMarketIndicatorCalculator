@@ -8,4 +8,5 @@ pub trait ApiClient{
 pub enum ExchangeEnum{
     BybitFutures,
     BybitSpot,
+    BinanceFutures
 }

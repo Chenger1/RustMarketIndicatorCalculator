@@ -13,9 +13,10 @@ mod consts;
 
 
 fn start_listening(){
-    let exchanges: [ExchangeEnum; 2] = [
+    let exchanges: [ExchangeEnum; 3] = [
         ExchangeEnum::BybitFutures,
-        ExchangeEnum::BybitSpot
+        ExchangeEnum::BybitSpot,
+        ExchangeEnum::BinanceFutures
     ];
 
     thread::scope(|s| {
@@ -32,5 +33,6 @@ fn start_listening(){
 }
 
 fn main(){
+    // TODO: add error handling
     let _ = start_listening();
 }
