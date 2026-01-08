@@ -1,7 +1,6 @@
-use std::thread;
-use listener::{get_symbols, listen_symbols};
-use crate::exchanges::get_exchange_client;
-use crate::exchanges::api_client::ExchangeEnum;
+use tokio::task::JoinSet;
+use listener::listen_symbols;
+use crate::exchanges::{bybit::BybitApiClient, binance::BinanceFuturesApiClient};
 
 mod api_client;
 mod structs;
@@ -12,27 +11,27 @@ mod exchanges;
 mod consts;
 
 
-fn start_listening(){
-    let exchanges: [ExchangeEnum; 3] = [
-        ExchangeEnum::BybitFutures,
-        ExchangeEnum::BybitSpot,
-        ExchangeEnum::BinanceFutures
-    ];
-
-    thread::scope(|s| {
-        for exchange in exchanges.iter(){
-            for chunk in consts::INTERVALS{
-                s.spawn(|| {
-                    let client = get_exchange_client(exchange);
-                    let tickers = get_symbols(&client, &chunk.to_string());
-                    listen_symbols(tickers, &client);
-                });
-            }
-        }
-    })
+async fn start_listening(){
+    let mut set = JoinSet::new();
+    for chunk in consts::INTERVALS{
+        set.spawn(async move {
+            let client = BybitApiClient::new(String::from("linear"));
+            listen_symbols(&chunk.to_string(), &client).await;
+        });
+        set.spawn(async move {
+            let client = BybitApiClient::new(String::from("spot"));
+            listen_symbols(&chunk.to_string(), &client).await;
+        });
+        set.spawn(async move {
+            let client = BinanceFuturesApiClient::new();
+            listen_symbols(&chunk.to_string(), &client).await;
+        });
+    }
+    set.join_all().await;
 }
 
-fn main(){
+#[tokio::main]
+async fn main(){
     // TODO: add error handling
-    let _ = start_listening();
+    let _ = start_listening().await;
 }

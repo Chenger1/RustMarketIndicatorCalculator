@@ -11,13 +11,13 @@ const KLINE: &str = "https://fapi.binance.com/fapi/v1/klines?";
 const SYMBOLS: &str = "https://fapi.binance.com/fapi/v1/ticker/24hr?";
 
 pub struct BinanceFuturesApiClient{
-    client: reqwest::blocking::Client,
+    client: reqwest::Client,
 }
 
 impl BinanceFuturesApiClient {
     pub fn new() -> Self{
         Self{
-            client: reqwest::blocking::Client::new()
+            client: reqwest::Client::new()
         }
     }
 
@@ -42,7 +42,7 @@ impl BinanceFuturesApiClient {
 }
 
 impl ApiClient for BinanceFuturesApiClient{
-    fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline> {
+    async fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline> {
         let interval = self.get_interval(interval);
         let mut parameters = BTreeMap::from([
             ("symbol", symbol),
@@ -53,7 +53,7 @@ impl ApiClient for BinanceFuturesApiClient{
         }
         
         let url = self.build_request(KLINE, parameters);
-        let resp = self.client.get(url).send().unwrap().text().unwrap();
+        let resp = self.client.get(url).send().await.unwrap().text().await.unwrap();
         let v: Vec<Value> = serde_json::from_str(&resp).unwrap();
         v.into_iter().map(|kline| common_structs::Kline{
             open_price: kline[1].as_str().unwrap().parse::<f32>().unwrap(),
@@ -62,8 +62,8 @@ impl ApiClient for BinanceFuturesApiClient{
         }).collect()
     }
     
-    fn get_symbols(&self) -> Vec<common_structs::Ticker>{
-        let resp = self.client.get(SYMBOLS).send().unwrap().text().unwrap();
+    async fn get_symbols(&self) -> Vec<common_structs::Ticker>{
+        let resp = self.client.get(SYMBOLS).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
         let response: Vec<BinanceResponseTicker> = serde_json::from_value(v.clone()).unwrap();
         response.into_iter().map(|ticker| common_structs::Ticker{

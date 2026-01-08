@@ -1,12 +1,12 @@
-use std::thread;
 use std::time::Duration;
+use tokio::time::sleep;
 use crate::logic::calculate_rsi;
 use crate::structs::{Ticker, Symbol};
 use crate::exchanges::api_client::ApiClient;
 use crate::consts;
 
-pub fn get_symbols <'a>(api_client: &Box<dyn ApiClient>, interval: &String) -> Vec<Symbol>{
-    let mut symbols = api_client.get_symbols();
+pub async fn get_symbols <'a>(api_client: &impl ApiClient, interval: &String) -> Vec<Symbol>{
+    let mut symbols = api_client.get_symbols().await;
     symbols.sort_by(|a, b| a.volume.partial_cmp(&b.volume).unwrap());
     symbols.reverse();
     let active_symbols: Vec<Ticker> = symbols[0..consts::NUMBER_OF_SYMBOLS].to_vec();
@@ -19,19 +19,20 @@ pub fn get_symbols <'a>(api_client: &Box<dyn ApiClient>, interval: &String) -> V
     symbols_with_intervals
 }
 
-fn listen_symbol(symbol: &String, interval: &String, client: &Box<dyn ApiClient>){
-    let klines = client.get_klines(symbol, interval, Some(&String::from("10")));
+async fn listen_symbol(symbol: &String, interval: &String, client: &impl ApiClient){
+    let klines = client.get_klines(symbol, interval, Some(&String::from("10"))).await;
     let rsi = calculate_rsi(klines);
     println!("Symbol {}. Current RSI: {}. Interval: {}", symbol, rsi, interval);
     println!("--------");
 }
 
-pub fn listen_symbols(symbols: Vec<Symbol>, client: &Box<dyn ApiClient>){
+pub async fn listen_symbols(interval: &String, client: &impl ApiClient){
+    let symbols: Vec<Symbol> = get_symbols(client, interval).await;
     let sleep_duration = Duration::from_secs(1);
     loop{
         for symbol in symbols.iter(){
-            listen_symbol(&symbol.symbol, &symbol.interval, &client);
+            listen_symbol(&symbol.symbol, &symbol.interval, client).await;
         }
-        thread::sleep(sleep_duration);
+        sleep(sleep_duration).await;
     }
 }

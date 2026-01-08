@@ -11,14 +11,14 @@ const SYMBOLS: &str = "https://api.bybit.com/v5/market/tickers?";
 mod structs;
 
 pub struct BybitApiClient{
-    client: reqwest::blocking::Client,
+    client: reqwest::Client,
     category: String
 }
 
 impl BybitApiClient{
     pub fn new(category: String) -> Self{
         Self{
-            client: reqwest::blocking::Client::new(),
+            client: reqwest::Client::new(),
             category: category
         }
     }
@@ -33,7 +33,7 @@ impl BybitApiClient{
 }
 
 impl ApiClient for BybitApiClient{    
-    fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline>{
+    async fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline>{
         let mut parameters = BTreeMap::from([
             ("category", &self.category),
             ("symbol", symbol),
@@ -44,7 +44,7 @@ impl ApiClient for BybitApiClient{
         }
 
         let url = self.build_request(KLINE, parameters);
-        let resp = self.client.get(url).send().unwrap().text().unwrap();
+        let resp = self.client.get(url).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
         let kline_response: Vec<BybitKlineResponse> = serde_json::from_value(v["result"]["list"].clone()).unwrap();
         kline_response.into_iter().map(|kline| common_structs::Kline{
@@ -54,12 +54,12 @@ impl ApiClient for BybitApiClient{
         }).collect()
     }
 
-    fn get_symbols(&self) -> Vec<common_structs::Ticker>{
+    async fn get_symbols(&self) -> Vec<common_structs::Ticker>{
         let parameters = BTreeMap::from([
             ("category", &self.category)
         ]);
         let url = self.build_request(SYMBOLS, parameters);
-        let resp = self.client.get(url).send().unwrap().text().unwrap();
+        let resp = self.client.get(url).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
         let response: Vec<BybitResponseTicker> = serde_json::from_value(v["result"]["list"].clone()).unwrap();
         response.into_iter().map(|ticker| common_structs::Ticker{
