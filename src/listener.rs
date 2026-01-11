@@ -1,8 +1,9 @@
 use std::time::Duration;
 use tokio::time::sleep;
 use crate::logic::calculate_rsi;
-use crate::structs::{Ticker, Symbol};
+use crate::structs::{Ticker, Symbol, Indicator};
 use crate::exchanges::api_client::ApiClient;
+use crate::storage::storage_trait::Storage;
 use crate::consts;
 
 pub async fn get_symbols <'a>(api_client: &impl ApiClient, interval: &String) -> Vec<Symbol>{
@@ -19,20 +20,27 @@ pub async fn get_symbols <'a>(api_client: &impl ApiClient, interval: &String) ->
     symbols_with_intervals
 }
 
-async fn listen_symbol(exchange: &String, symbol: &String, interval: &String, client: &impl ApiClient){
+async fn listen_symbol(exchange: &String, symbol: &String, interval: &String, client: &impl ApiClient, storage: &mut impl Storage) -> Indicator{
     let klines = client.get_klines(symbol, interval, Some(&String::from("10"))).await;
     let rsi = calculate_rsi(klines);
     println!("Exchange: {exchange}, Symbol {}. Current RSI: {}. Interval: {}", symbol, rsi, interval);
     println!("--------");
+    Indicator{
+        symbol: symbol.clone(),
+        interval: interval.clone(),
+        value: rsi
+    }
 }
 
-pub async fn listen_symbols(exchange: String, interval: &String, client: &impl ApiClient){
+pub async fn listen_symbols(exchange: String, interval: &String, client: &impl ApiClient, storage: &mut impl Storage){
     let symbols: Vec<Symbol> = get_symbols(client, interval).await;
-    let sleep_duration = Duration::from_secs(1);
+    let sleep_duration = Duration::from_secs(3);
     loop{
+        let mut indicators: Vec<Indicator> = vec![];
         for symbol in symbols.iter(){
-            listen_symbol(&exchange, &symbol.symbol, &symbol.interval, client).await;
+            indicators.push(listen_symbol(&exchange, &symbol.symbol, &symbol.interval, client, storage).await);
         }
+        storage.write_data(indicators);
         sleep(sleep_duration).await;
     }
 }

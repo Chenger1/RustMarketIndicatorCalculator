@@ -1,6 +1,7 @@
 use tokio::task::JoinSet;
 use listener::listen_symbols;
 use crate::exchanges::{bybit::BybitApiClient, binance::BinanceFuturesApiClient};
+use crate::storage::json::JsonStorage;
 
 mod api_client;
 mod structs;
@@ -9,6 +10,7 @@ mod utils;
 mod listener;
 mod exchanges;
 mod consts;
+mod storage;
 
 
 async fn start_listening(){
@@ -16,15 +18,18 @@ async fn start_listening(){
     for chunk in consts::INTERVALS{
         set.spawn(async move {
             let client = BybitApiClient::new(String::from("linear"));
-            listen_symbols(String::from("Bybit Futures"),&chunk.to_string(), &client).await;
+            let mut storage = JsonStorage::new("bybit_futures.json");
+            listen_symbols(String::from("Bybit Futures"),&chunk.to_string(), &client, &mut storage).await;
         });
         set.spawn(async move {
             let client = BybitApiClient::new(String::from("spot"));
-            listen_symbols(String::from("Bybit Spot"), &chunk.to_string(), &client).await;
+            let mut storage = JsonStorage::new("bybit_spot.json");
+            listen_symbols(String::from("Bybit Spot"), &chunk.to_string(), &client, &mut storage).await;
         });
         set.spawn(async move {
             let client = BinanceFuturesApiClient::new();
-            listen_symbols(String::from("Binance Futures"), &chunk.to_string(), &client).await;
+            let mut storage = JsonStorage::new("binance_futures.json");
+            listen_symbols(String::from("Binance Futures"), &chunk.to_string(), &client, &mut storage).await;
         });
     }
     set.join_all().await;

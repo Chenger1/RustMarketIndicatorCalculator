@@ -19,3 +19,11 @@ pub struct Symbol{
     pub symbol: String,
     pub interval: String
 }
+
+
+#[derive (Serialize, Deserialize)]
+pub struct Indicator{
+    pub symbol: String,
+    pub interval: String,
+    pub value: f32
+}
