@@ -19,19 +19,19 @@ pub async fn get_symbols <'a>(api_client: &impl ApiClient, interval: &String) ->
     symbols_with_intervals
 }
 
-async fn listen_symbol(symbol: &String, interval: &String, client: &impl ApiClient){
+async fn listen_symbol(exchange: &String, symbol: &String, interval: &String, client: &impl ApiClient){
     let klines = client.get_klines(symbol, interval, Some(&String::from("10"))).await;
     let rsi = calculate_rsi(klines);
-    println!("Symbol {}. Current RSI: {}. Interval: {}", symbol, rsi, interval);
+    println!("Exchange: {exchange}, Symbol {}. Current RSI: {}. Interval: {}", symbol, rsi, interval);
     println!("--------");
 }
 
-pub async fn listen_symbols(interval: &String, client: &impl ApiClient){
+pub async fn listen_symbols(exchange: String, interval: &String, client: &impl ApiClient){
     let symbols: Vec<Symbol> = get_symbols(client, interval).await;
     let sleep_duration = Duration::from_secs(1);
     loop{
         for symbol in symbols.iter(){
-            listen_symbol(&symbol.symbol, &symbol.interval, client).await;
+            listen_symbol(&exchange, &symbol.symbol, &symbol.interval, client).await;
         }
         sleep(sleep_duration).await;
     }

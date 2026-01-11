@@ -16,15 +16,15 @@ async fn start_listening(){
     for chunk in consts::INTERVALS{
         set.spawn(async move {
             let client = BybitApiClient::new(String::from("linear"));
-            listen_symbols(&chunk.to_string(), &client).await;
+            listen_symbols(String::from("Bybit Futures"),&chunk.to_string(), &client).await;
         });
         set.spawn(async move {
             let client = BybitApiClient::new(String::from("spot"));
-            listen_symbols(&chunk.to_string(), &client).await;
+            listen_symbols(String::from("Bybit Spot"), &chunk.to_string(), &client).await;
         });
         set.spawn(async move {
             let client = BinanceFuturesApiClient::new();
-            listen_symbols(&chunk.to_string(), &client).await;
+            listen_symbols(String::from("Binance Futures"), &chunk.to_string(), &client).await;
         });
     }
     set.join_all().await;
