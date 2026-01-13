@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::BTreeMap;
 use crate::structs as common_structs;
 use crate::exchanges::api_client::ApiClient;
+use crate::consts;
 use structs::{BybitKlineResponse, BybitResponseTicker};
 
 const KLINE: &str = "https://api.bybit.com/v5/market/kline?";
@@ -54,17 +55,23 @@ impl ApiClient for BybitApiClient{
         }).collect()
     }
 
-    async fn get_symbols(&self) -> Vec<common_structs::Ticker>{
+    async fn get_symbols(&self) -> Vec<common_structs::Symbol>{
         let parameters = BTreeMap::from([
             ("category", &self.category)
         ]);
         let url = self.build_request(SYMBOLS, parameters);
         let resp = self.client.get(url).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
-        let response: Vec<BybitResponseTicker> = serde_json::from_value(v["result"]["list"].clone()).unwrap();
-        response.into_iter().map(|ticker| common_structs::Ticker{
-            symbol: ticker.symbol,
-            volume: ticker.volume24h.parse().unwrap()
-        }).collect()
+        let mut response: Vec<BybitResponseTicker> = serde_json::from_value(v["result"]["list"].clone()).unwrap();
+        response.
+        sort_by(|a, b| {
+            a.volume24h.partial_cmp(&b.volume24h).unwrap()
+        });
+        response.reverse();
+        response[0..consts::NUMBER_OF_SYMBOLS].
+        to_vec().
+        into_iter().
+        map(|ticker| common_structs::Symbol{symbol: ticker.symbol.clone()}).
+        collect()
     }
 }

@@ -8,16 +8,9 @@ pub struct Kline{
     pub volume: f32
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Ticker{
-    pub symbol: String,
-    pub volume: f32
-}
-
 #[derive(Clone)]
 pub struct Symbol{
     pub symbol: String,
-    pub interval: String
 }
 
 

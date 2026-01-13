@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use crate::exchanges::api_client::ApiClient;
 use crate::exchanges::binance::structs::BinanceResponseTicker;
 use crate::structs as common_structs;
+use crate::consts;
 
 mod structs;
 
@@ -62,13 +63,18 @@ impl ApiClient for BinanceFuturesApiClient{
         }).collect()
     }
     
-    async fn get_symbols(&self) -> Vec<common_structs::Ticker>{
+    async fn get_symbols(&self) -> Vec<common_structs::Symbol>{
         let resp = self.client.get(SYMBOLS).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
-        let response: Vec<BinanceResponseTicker> = serde_json::from_value(v.clone()).unwrap();
-        response.into_iter().map(|ticker| common_structs::Ticker{
-            symbol: ticker.symbol,
-            volume: ticker.count
-        }).collect()
+        let mut response: Vec<BinanceResponseTicker> = serde_json::from_value(v.clone()).unwrap();
+        response.sort_by(|a, b| {
+            a.count.partial_cmp(&b.count).unwrap()
+        });
+        response.reverse();
+        response[0..consts::NUMBER_OF_SYMBOLS].
+        to_vec().
+        into_iter().
+        map(|ticker| common_structs::Symbol{symbol: ticker.symbol.clone()}).
+        collect()
     }
 }

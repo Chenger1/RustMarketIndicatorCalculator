@@ -1,7 +1,7 @@
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 // use std::io::BufReader;
-use crate::storage::storage_trait::Storage;
+use crate::storage::Storage;
 use crate::structs::Indicator;
 
 pub struct JsonStorage{
