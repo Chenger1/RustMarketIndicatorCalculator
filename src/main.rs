@@ -1,16 +1,13 @@
 use tokio::task::JoinSet;
-use listener::listen_symbols;
+use trading::listener::listen_symbols;
 use crate::exchanges::{bybit::BybitApiClient, binance::BinanceFuturesApiClient};
 use crate::storage::json::JsonStorage;
 
-mod api_client;
 mod structs;
-mod logic;
-mod utils;
-mod listener;
 mod exchanges;
 mod consts;
 mod storage;
+mod trading;
 
 
 async fn start_listening(){

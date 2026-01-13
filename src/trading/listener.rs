@@ -1,6 +1,6 @@
 use std::time::Duration;
 use tokio::time::sleep;
-use crate::logic::calculate_rsi;
+use crate::trading::logic::calculate_rsi;
 use crate::structs::{Ticker, Symbol, Indicator};
 use crate::exchanges::api_client::ApiClient;
 use crate::storage::storage_trait::Storage;
@@ -20,7 +20,7 @@ pub async fn get_symbols <'a>(api_client: &impl ApiClient, interval: &String) ->
     symbols_with_intervals
 }
 
-async fn listen_symbol(exchange: &String, symbol: &String, interval: &String, client: &impl ApiClient, storage: &mut impl Storage) -> Indicator{
+async fn listen_symbol(exchange: &String, symbol: &String, interval: &String, client: &impl ApiClient) -> Indicator{
     let klines = client.get_klines(symbol, interval, Some(&String::from("10"))).await;
     let rsi = calculate_rsi(klines);
     println!("Exchange: {exchange}, Symbol {}. Current RSI: {}. Interval: {}", symbol, rsi, interval);
@@ -38,7 +38,7 @@ pub async fn listen_symbols(exchange: String, interval: &String, client: &impl A
     loop{
         let mut indicators: Vec<Indicator> = vec![];
         for symbol in symbols.iter(){
-            indicators.push(listen_symbol(&exchange, &symbol.symbol, &symbol.interval, client, storage).await);
+            indicators.push(listen_symbol(&exchange, &symbol.symbol, &symbol.interval, client).await);
         }
         storage.write_data(indicators);
         sleep(sleep_duration).await;
