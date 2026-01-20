@@ -1,4 +1,3 @@
-
 use serde:: {Serialize, Deserialize};
 
 #[derive(Serialize, Deserialize)]
@@ -8,15 +7,10 @@ pub struct Kline{
     pub volume: f32
 }
 
-#[derive(Clone)]
-pub struct Symbol{
-    pub symbol: String,
-}
 
-
-#[derive (Serialize, Deserialize)]
 pub struct Indicator{
-    pub symbol: String,
-    pub interval: String,
-    pub value: f32
+    pub symbol_id: i32,
+    // pub symbol: String,
+    // pub interval: String,
+    pub value: f32,
 }

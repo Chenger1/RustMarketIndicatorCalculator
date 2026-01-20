@@ -63,7 +63,7 @@ impl ApiClient for BinanceFuturesApiClient{
         }).collect()
     }
     
-    async fn get_symbols(&self) -> Vec<common_structs::Symbol>{
+    async fn get_symbols(&self) -> Vec<String>{
         let resp = self.client.get(SYMBOLS).send().await.unwrap().text().await.unwrap();
         let v: Value = serde_json::from_str(&resp).unwrap();
         let mut response: Vec<BinanceResponseTicker> = serde_json::from_value(v.clone()).unwrap();
@@ -74,7 +74,7 @@ impl ApiClient for BinanceFuturesApiClient{
         response[0..consts::NUMBER_OF_SYMBOLS].
         to_vec().
         into_iter().
-        map(|ticker| common_structs::Symbol{symbol: ticker.symbol.clone()}).
+        map(|ticker| ticker.symbol.clone()).
         collect()
     }
 }

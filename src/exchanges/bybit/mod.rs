@@ -55,7 +55,7 @@ impl ApiClient for BybitApiClient{
         }).collect()
     }
 
-    async fn get_symbols(&self) -> Vec<common_structs::Symbol>{
+    async fn get_symbols(&self) -> Vec<String>{
         let parameters = BTreeMap::from([
             ("category", &self.category)
         ]);
@@ -71,7 +71,7 @@ impl ApiClient for BybitApiClient{
         response[0..consts::NUMBER_OF_SYMBOLS].
         to_vec().
         into_iter().
-        map(|ticker| common_structs::Symbol{symbol: ticker.symbol.clone()}).
+        map(|ticker| ticker.symbol.clone()).
         collect()
     }
 }
