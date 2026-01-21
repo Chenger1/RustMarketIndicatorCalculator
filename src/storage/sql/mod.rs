@@ -19,14 +19,14 @@ impl Storage for DBStorage{
     async fn save_indicators(&self, indicators_data: Vec<Indicator>){
         let symbols_ids: Vec<i32> = indicators_data.iter().map(|indicator| indicator.symbol_id).collect();
         let models: HashMap<i32, indicators::Model> = indicators::Entity::find()
-            .filter(indicators::Column::Id.is_in(symbols_ids))
+            .filter(indicators::Column::SymbolId.is_in(symbols_ids))
             .all(&self.pool)
             .await
             .unwrap()
             .iter()
             .map(|model| (model.symbol_id, model.clone()))
             .collect();
-
+        
         let mut to_create: Vec<indicators::ActiveModel> = Vec::new();
         let mut to_update: Vec<String> = Vec::new();
         let mut to_update_ids: Vec<String> = Vec::new();
@@ -50,17 +50,18 @@ impl Storage for DBStorage{
             .await
             .unwrap();
 
-        let sql = format!(
-            "UPDATE indicators SET value = CASE id {} END WHERE id IN ({})",
-            to_update.join(" "),
-            to_update_ids.join(", ")
-        );
-
-        self.pool.execute_raw(Statement::from_string(
-            DatabaseBackend::Postgres,
-            sql,
-        ))
-            .await.unwrap();
+        if !to_update.is_empty() {
+            let sql = format!(
+                "UPDATE indicators SET value = CASE id {} END WHERE id IN ({})",
+                to_update.join(" "),
+                to_update_ids.join(", ")
+            );
+            self.pool.execute_raw(Statement::from_string(
+                DatabaseBackend::Postgres,
+                sql,
+            ))
+                .await.unwrap();
+        }
     }
 
     async fn create_exchange(&self, title: &String) -> i32 {
@@ -78,8 +79,10 @@ impl Storage for DBStorage{
         exchange.id
     }
 
-    async fn create_symbols(&self, symbols: Vec<String>, exchange_id: i32) -> Vec<symbols::Model>{
-        symbols::Entity::delete_many().exec(&self.pool).await.unwrap();
+    async fn create_symbols(&self, symbols: Vec<String>, exchange_id: i32){
+        symbols::Entity::delete_many()
+            .filter(symbols::Column::ExchangeId.eq(exchange_id))
+            .exec(&self.pool).await.unwrap();
         let to_create = symbols.into_iter()
             .map(|symbol| {
                 symbols::ActiveModel{
@@ -89,6 +92,12 @@ impl Storage for DBStorage{
                 }
             }).collect::<Vec<symbols::ActiveModel>>();
 
-        symbols::Entity::insert_many(to_create).exec_with_returning(&self.pool).await.unwrap()
+        symbols::Entity::insert_many(to_create).exec_without_returning(&self.pool).await.unwrap();
+    }
+
+    async fn get_symbols(&self, exchange_id: i32) -> Vec<symbols::Model>{
+        symbols::Entity::find()
+            .filter(symbols::Column::ExchangeId.eq(exchange_id))
+            .all(&self.pool).await.unwrap()
     }
 }

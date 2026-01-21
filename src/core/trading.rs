@@ -13,6 +13,7 @@ where
     S: Storage
 {
     exchange: String,
+    exchange_id: i32,
     interval: &'i String,
     api_client: &'a T,
     storage: Arc<S>
@@ -23,9 +24,10 @@ where
     T: ApiClient,
     S: Storage
 {
-    pub fn new(exchange: String, interval: &'i String, api_client: &'a T, storage: Arc<S>) -> Self{
+    pub fn new(exchange: String, exchange_id: i32, interval: &'i String, api_client: &'a T, storage: Arc<S>) -> Self{
         TradingService{
             exchange: exchange,
+            exchange_id: exchange_id,
             interval: interval,
             api_client: api_client,
             storage: storage
@@ -44,8 +46,7 @@ where
     }
 
     pub async fn run(&self){
-        let exchange_id = self.storage.create_exchange(&self.exchange).await;
-        let symbols = self.storage.create_symbols(self.api_client.get_symbols().await, exchange_id).await;
+        let symbols = self.storage.get_symbols(self.exchange_id).await;
         let sleep_duration = Duration::from_secs(3);
         loop{
             let mut indicators: Vec<Indicator> = vec![];
