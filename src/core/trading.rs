@@ -25,13 +25,7 @@ where
     S: Storage
 {
     pub fn new(exchange: String, exchange_id: i32, interval: &'i String, api_client: &'a T, storage: Arc<S>) -> Self{
-        TradingService{
-            exchange: exchange,
-            exchange_id: exchange_id,
-            interval: interval,
-            api_client: api_client,
-            storage: storage
-        }
+        TradingService{exchange, exchange_id, interval, api_client, storage}
     }
 
     async fn listen_symbol(&self, symbol: &Symbol) -> Indicator{
