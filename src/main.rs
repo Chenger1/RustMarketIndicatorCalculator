@@ -70,7 +70,6 @@ async fn start_listening() -> Result<(), Box<dyn std::error::Error>>{
 
 #[tokio::main]
 async fn main(){
-    // TODO: add error handling
     dotenv().ok();
     let _ = start_listening().await;
 }

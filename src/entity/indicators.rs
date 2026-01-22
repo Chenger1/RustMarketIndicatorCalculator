@@ -2,13 +2,22 @@
 
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
+#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[sea_orm(rs_type = "String", db_type = "String(StringLen::None)", enum_name = "indicator_type", rename_all = "UPPERCASE")]
+pub enum IndicatorType{
+    RSI,
+    Price
+}
+
+
+#[derive(Clone, Debug, DeriveEntityModel)]
 #[sea_orm(table_name = "indicators")]
 pub struct Model {
     #[sea_orm(primary_key)]
     pub id: i32,
     pub symbol_id: i32,
-    pub value: i32,
+    pub value: f32,
+    pub indicator_type: IndicatorType,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
