@@ -1,5 +1,5 @@
 use serde:: {Serialize, Deserialize};
-use crate::entity::indicators::IndicatorType;
+use crate::entity::indicators::{IndicatorType, Interval};
 
 #[derive(Serialize, Deserialize)]
 pub struct Kline{
@@ -11,7 +11,7 @@ pub struct Kline{
 
 pub struct Indicator{
     pub symbol_id: i32,
-    // pub interval: String,
     pub value: f32,
-    pub indicator_type: IndicatorType
+    pub indicator_type: IndicatorType,
+    pub interval: Interval
 }

@@ -5,6 +5,7 @@ mod m20260120_194751_add_value_indicator_type;
 mod m20260120_203238_symbol_id_unique_key;
 mod m20260121_200731_remove_symbol_id_unique;
 mod m20260121_203405_indicator_type;
+mod m20260122_191658_add_interval_to_indicator;
 
 pub struct Migrator;
 
@@ -17,6 +18,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20260120_203238_symbol_id_unique_key::Migration),
             Box::new(m20260121_200731_remove_symbol_id_unique::Migration),
             Box::new(m20260121_203405_indicator_type::Migration),
+            Box::new(m20260122_191658_add_interval_to_indicator::Migration),
         ]
     }
 }

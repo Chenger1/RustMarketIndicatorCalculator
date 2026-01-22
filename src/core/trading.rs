@@ -1,9 +1,9 @@
-use crate::core::logic::Indicators;
+use crate::core::logic::IndicatorsCalculator;
 use crate::entity::symbols::Model as Symbol;
 use crate::exchanges::api_client::ApiClient;
 use crate::storage::Storage;
 use crate::structs::Indicator;
-use crate::entity::indicators::IndicatorType;
+use crate::entity::indicators::{IndicatorType, Interval};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -46,8 +46,8 @@ where
             .api_client
             .get_klines(&symbol.tile, self.interval, Some(&String::from("10")))
             .await;
-        let rsi = Indicators::calculate_rsi(&klines);
-        let price = Indicators::calculate_price(&klines);
+        let rsi = IndicatorsCalculator::calculate_rsi(&klines);
+        let price = IndicatorsCalculator::calculate_price(&klines);
         println!(
             "Exchange: {}, Symbol {}. Current RSI: {}. Current Price: {}. Interval: {}",
             self.exchange, symbol.tile, rsi, price, self.interval
@@ -57,12 +57,14 @@ where
             Indicator {
                 value: rsi,
                 symbol_id: symbol.id.clone(),
-                indicator_type: IndicatorType::RSI
+                indicator_type: IndicatorType::RSI,
+                interval: Interval::from_string(self.interval).unwrap()
             },
             Indicator {
                 value: price,
                 symbol_id: symbol.id.clone(),
-                indicator_type: IndicatorType::Price
+                indicator_type: IndicatorType::Price,
+                interval: Interval::from_string(self.interval).unwrap()
             },
         )
     }
@@ -71,13 +73,15 @@ where
         let symbols = self.storage.get_symbols(self.exchange_id).await;
         let sleep_duration = Duration::from_secs(3);
         loop {
-            let mut indicators: Vec<Indicator> = vec![];
+            let mut rsi_indicators: Vec<Indicator> = vec![];
+            let mut price_indicators: Vec<Indicator> = vec![];
             for symbol in symbols.iter() {
                 let (rsi, price) = self.listen_symbol(&symbol).await;
-                indicators.push(rsi);
-                indicators.push(price);
+                rsi_indicators.push(rsi);
+                price_indicators.push(price);
             }
-            self.storage.save_indicators(indicators).await;
+            self.storage.save_indicators(rsi_indicators, IndicatorType::RSI, Interval::from_string(self.interval).unwrap()).await;
+            self.storage.save_indicators(price_indicators, IndicatorType::Price, Interval::from_string(self.interval).unwrap()).await;
             sleep(sleep_duration).await;
         }
     }

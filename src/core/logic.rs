@@ -1,8 +1,8 @@
 use crate::structs::Kline;
 
-pub struct Indicators{}
+pub struct IndicatorsCalculator{}
 
-impl Indicators{
+impl IndicatorsCalculator{
     pub fn calculate_rsi(arr: &Vec<Kline>) -> f32{
         let mut green = 0.0;
         let mut red = 0.0;

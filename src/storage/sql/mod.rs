@@ -19,13 +19,20 @@ impl DBStorage {
 }
 
 impl Storage for DBStorage {
-    async fn save_indicators(&self, indicators_data: Vec<Indicator>) {
+    async fn save_indicators(
+        &self,
+        indicators_data: Vec<Indicator>,
+        indicator_type: indicators::IndicatorType,
+        interval: indicators::Interval,
+    ) {
         let symbols_ids: Vec<i32> = indicators_data
             .iter()
             .map(|indicator| indicator.symbol_id)
             .collect();
         let models: HashMap<i32, indicators::Model> = indicators::Entity::find()
             .filter(indicators::Column::SymbolId.is_in(symbols_ids))
+            .filter(indicators::Column::IndicatorType.eq(indicator_type.clone()))
+            .filter(indicators::Column::Interval.eq(interval.clone()))
             .all(&self.pool)
             .await
             .unwrap()
@@ -49,6 +56,7 @@ impl Storage for DBStorage {
                     symbol_id: ActiveValue::Set(indicator.symbol_id),
                     value: ActiveValue::Set(indicator.value),
                     indicator_type: ActiveValue::Set(indicator.indicator_type),
+                    interval: ActiveValue::Set(indicator.interval),
                 })
             }
         }
@@ -60,9 +68,11 @@ impl Storage for DBStorage {
 
         if !to_update.is_empty() {
             let sql = format!(
-                "UPDATE indicators SET value = CASE id {} END WHERE id IN ({})",
+                "UPDATE indicators SET value = CASE id {} END WHERE id IN ({}) AND indicator_type = '{}' AND interval = '{}'",
                 to_update.join(" "),
-                to_update_ids.join(", ")
+                to_update_ids.join(", "),
+                indicator_type,
+                interval
             );
             self.pool
                 .execute_raw(Statement::from_string(DatabaseBackend::Postgres, sql))
