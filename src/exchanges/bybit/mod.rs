@@ -10,6 +10,7 @@ const KLINE: &str = "https://api.bybit.com/v5/market/kline?";
 const SYMBOLS: &str = "https://api.bybit.com/v5/market/tickers?";
 
 mod structs;
+mod websockets;
 
 pub struct BybitApiClient{
     client: reqwest::Client,
@@ -33,6 +34,7 @@ impl BybitApiClient{
     }
 }
 
+#[async_trait::async_trait]
 impl ApiClient for BybitApiClient{    
     async fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline>{
         let mut parameters = BTreeMap::from([

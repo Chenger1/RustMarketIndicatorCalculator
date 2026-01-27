@@ -42,6 +42,7 @@ impl BinanceFuturesApiClient {
     }
 }
 
+#[async_trait::async_trait]
 impl ApiClient for BinanceFuturesApiClient{
     async fn get_klines(&self, symbol: &String, interval: &String, limit: Option<&String>) -> Vec<common_structs::Kline> {
         let interval = self.get_interval(interval);

@@ -8,28 +8,26 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::time::sleep;
 
-pub struct TradingService<'i, 'a, T, S>
+pub struct TradingService<S>
 where
-    T: ApiClient,
     S: Storage,
 {
     exchange: String,
     exchange_id: i32,
-    interval: &'i String,
-    api_client: &'a T,
+    interval: String,
+    api_client: Arc<dyn ApiClient>,
     storage: Arc<S>,
 }
 
-impl<'i, 'a, T, S> TradingService<'i, 'a, T, S>
+impl<S> TradingService<S>
 where
-    T: ApiClient,
     S: Storage,
 {
     pub fn new(
         exchange: String,
         exchange_id: i32,
-        interval: &'i String,
-        api_client: &'a T,
+        interval: String,
+        api_client: Arc<dyn ApiClient>,
         storage: Arc<S>,
     ) -> Self {
         TradingService {
@@ -44,7 +42,7 @@ where
     async fn listen_symbol(&self, symbol: &Symbol) -> (Indicator, Indicator) {
         let klines = self
             .api_client
-            .get_klines(&symbol.tile, self.interval, Some(&String::from("10")))
+            .get_klines(&symbol.tile, &self.interval, Some(&String::from("10")))
             .await;
         let rsi = IndicatorsCalculator::calculate_rsi(&klines);
         let price = IndicatorsCalculator::calculate_price(&klines);
@@ -58,13 +56,13 @@ where
                 value: rsi,
                 symbol_id: symbol.id.clone(),
                 indicator_type: IndicatorType::RSI,
-                interval: Interval::from_string(self.interval).unwrap()
+                interval: Interval::from_string(&self.interval).unwrap()
             },
             Indicator {
                 value: price,
                 symbol_id: symbol.id.clone(),
                 indicator_type: IndicatorType::Price,
-                interval: Interval::from_string(self.interval).unwrap()
+                interval: Interval::from_string(&self.interval).unwrap()
             },
         )
     }
@@ -80,8 +78,8 @@ where
                 rsi_indicators.push(rsi);
                 price_indicators.push(price);
             }
-            self.storage.save_indicators(rsi_indicators, IndicatorType::RSI, Interval::from_string(self.interval).unwrap()).await;
-            self.storage.save_indicators(price_indicators, IndicatorType::Price, Interval::from_string(self.interval).unwrap()).await;
+            self.storage.save_indicators(rsi_indicators, IndicatorType::RSI, Interval::from_string(&self.interval).unwrap()).await;
+            self.storage.save_indicators(price_indicators, IndicatorType::Price, Interval::from_string(&self.interval).unwrap()).await;
             sleep(sleep_duration).await;
         }
     }
